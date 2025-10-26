@@ -3,37 +3,33 @@ import { CheckCircle2, MapPin, Clock, IndianRupee, Calendar, Download } from "lu
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import QRCode from "react-qr-code";
+import { format } from "date-fns";
 
 const Confirmation = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
   const bookingData = location.state || {
+    bookingId: "DEMO",
     parkingLot: "Demo Parking",
     location: "Demo Location",
     slotId: "F1-1",
+    floor: 1,
     duration: 2,
     totalCost: 100,
+    startTime: new Date().toISOString(),
+    endTime: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
   };
 
-  const bookingId = `BK${Date.now().toString().slice(-8)}`;
-  const startTime = new Date();
-  const endTime = new Date(startTime.getTime() + bookingData.duration * 60 * 60 * 1000);
+  const startTime = new Date(bookingData.startTime);
+  const endTime = new Date(bookingData.endTime);
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
+    return format(date, "h:mm a");
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return format(date, "dd MMM yyyy");
   };
 
   return (
@@ -64,9 +60,9 @@ const Confirmation = () => {
                 <span>{bookingData.location}</span>
               </div>
             </div>
-            <div className="text-right">
+            <div>
               <div className="text-sm text-muted-foreground">Booking ID</div>
-              <div className="font-mono font-bold text-primary">{bookingId}</div>
+              <div className="font-mono font-bold text-primary">{bookingData.bookingId}</div>
             </div>
           </div>
 
@@ -124,11 +120,12 @@ const Confirmation = () => {
             <div className="flex justify-center p-6 bg-white rounded-lg">
               <QRCode
                 value={JSON.stringify({
-                  bookingId,
+                  bookingId: bookingData.bookingId,
                   parkingLot: bookingData.parkingLot,
                   slotId: bookingData.slotId,
-                  startTime: startTime.toISOString(),
-                  endTime: endTime.toISOString(),
+                  floor: bookingData.floor,
+                  startTime: bookingData.startTime,
+                  endTime: bookingData.endTime,
                 })}
                 size={200}
               />

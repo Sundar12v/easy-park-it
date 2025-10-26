@@ -1,51 +1,78 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, MapPin, Clock, IndianRupee, Car, Bike, Zap } from "lucide-react";
+import { Search, MapPin, Clock, IndianRupee, Car, Bike, Zap, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-// Mock data for parking lots
+// Chennai parking lots data
 const parkingLots = [
   {
     id: 1,
-    name: "Central Plaza Parking",
-    location: "Connaught Place, New Delhi",
+    name: "T Nagar Shopping Complex",
+    location: "T Nagar, Chennai",
     distance: "0.5 km",
-    pricePerHour: 50,
-    availableSlots: 24,
-    totalSlots: 100,
+    pricePerHour: 40,
+    availableSlots: 32,
+    totalSlots: 120,
     vehicleTypes: ["car", "bike", "ev"],
   },
   {
     id: 2,
-    name: "Metro Station Parking",
-    location: "Rajiv Chowk Metro, Delhi",
+    name: "Anna Nagar Metro Parking",
+    location: "Anna Nagar, Chennai",
     distance: "1.2 km",
-    pricePerHour: 40,
+    pricePerHour: 30,
     availableSlots: 45,
-    totalSlots: 150,
+    totalSlots: 100,
     vehicleTypes: ["car", "bike"],
   },
   {
     id: 3,
-    name: "Mall Parking Complex",
-    location: "Select Citywalk, Saket",
-    distance: "2.8 km",
-    pricePerHour: 60,
-    availableSlots: 67,
-    totalSlots: 200,
+    name: "Phoenix Marketcity Mall",
+    location: "Velachery, Chennai",
+    distance: "3.5 km",
+    pricePerHour: 50,
+    availableSlots: 89,
+    totalSlots: 250,
     vehicleTypes: ["car", "bike", "ev"],
   },
   {
     id: 4,
-    name: "Airport Parking Hub",
-    location: "IGI Airport, Terminal 3",
-    distance: "15 km",
-    pricePerHour: 80,
-    availableSlots: 120,
-    totalSlots: 300,
+    name: "Chennai Airport Parking",
+    location: "Meenambakkam, Chennai",
+    distance: "12 km",
+    pricePerHour: 70,
+    availableSlots: 156,
+    totalSlots: 400,
+    vehicleTypes: ["car", "bike", "ev"],
+  },
+  {
+    id: 5,
+    name: "Marina Beach Parking",
+    location: "Marina Beach, Chennai",
+    distance: "2.8 km",
+    pricePerHour: 35,
+    availableSlots: 28,
+    totalSlots: 80,
+    vehicleTypes: ["car", "bike"],
+  },
+  {
+    id: 6,
+    name: "Express Avenue Mall",
+    location: "Royapettah, Chennai",
+    distance: "1.8 km",
+    pricePerHour: 45,
+    availableSlots: 67,
+    totalSlots: 180,
     vehicleTypes: ["car", "bike", "ev"],
   },
 ];
@@ -53,6 +80,19 @@ const parkingLots = [
 const Index = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const filteredLots = parkingLots.filter(
     (lot) =>
@@ -73,10 +113,39 @@ const Index = () => {
     ev: Zap,
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="bg-gradient-primary text-primary-foreground py-16 px-4">
+        <div className="absolute top-4 right-4">
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" className="rounded-full">
+                  <User className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate("/my-bookings")}>
+                  My Bookings
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button variant="secondary" onClick={() => navigate("/auth")}>
+              Login
+            </Button>
+          )}
+        </div>
         <div className="container mx-auto max-w-6xl">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
             Smart Parking Made Easy

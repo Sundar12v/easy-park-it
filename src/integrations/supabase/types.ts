@@ -14,7 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bookings: {
+        Row: {
+          created_at: string
+          duration_hours: number
+          end_time: string
+          floor: number
+          id: string
+          parking_lot_id: number
+          parking_lot_name: string
+          price_per_hour: number
+          slot_number: string
+          start_time: string
+          status: string
+          total_cost: number
+          updated_at: string
+          user_id: string
+          vehicle_type: string
+        }
+        Insert: {
+          created_at?: string
+          duration_hours: number
+          end_time: string
+          floor: number
+          id?: string
+          parking_lot_id: number
+          parking_lot_name: string
+          price_per_hour: number
+          slot_number: string
+          start_time: string
+          status?: string
+          total_cost: number
+          updated_at?: string
+          user_id: string
+          vehicle_type: string
+        }
+        Update: {
+          created_at?: string
+          duration_hours?: number
+          end_time?: string
+          floor?: number
+          id?: string
+          parking_lot_id?: number
+          parking_lot_name?: string
+          price_per_hour?: number
+          slot_number?: string
+          start_time?: string
+          status?: string
+          total_cost?: number
+          updated_at?: string
+          user_id?: string
+          vehicle_type?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

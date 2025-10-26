@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Car, Bike, Zap, Clock, IndianRupee, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,14 +6,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
-// Mock parking lot data
+// Chennai parking lot data
 const parkingLotData = {
   1: {
     id: 1,
-    name: "Central Plaza Parking",
-    location: "Connaught Place, New Delhi",
-    pricePerHour: 50,
+    name: "T Nagar Shopping Complex",
+    location: "T Nagar, Chennai",
+    pricePerHour: 40,
     floors: [
       {
         id: "F1",
@@ -37,6 +38,126 @@ const parkingLotData = {
       },
     ],
   },
+  2: {
+    id: 2,
+    name: "Anna Nagar Metro Parking",
+    location: "Anna Nagar, Chennai",
+    pricePerHour: 30,
+    floors: [
+      {
+        id: "F1",
+        name: "Floor 1",
+        slots: Array.from({ length: 30 }, (_, i) => ({
+          id: `F1-${i + 1}`,
+          number: i + 1,
+          type: i % 2 === 0 ? "bike" : "car",
+          status: Math.random() > 0.4 ? "available" : "booked",
+        })),
+      },
+    ],
+  },
+  3: {
+    id: 3,
+    name: "Phoenix Marketcity Mall",
+    location: "Velachery, Chennai",
+    pricePerHour: 50,
+    floors: [
+      {
+        id: "F1",
+        name: "Floor 1",
+        slots: Array.from({ length: 50 }, (_, i) => ({
+          id: `F1-${i + 1}`,
+          number: i + 1,
+          type: i % 3 === 0 ? "ev" : i % 2 === 0 ? "bike" : "car",
+          status: Math.random() > 0.4 ? "available" : "booked",
+        })),
+      },
+      {
+        id: "F2",
+        name: "Floor 2",
+        slots: Array.from({ length: 50 }, (_, i) => ({
+          id: `F2-${i + 1}`,
+          number: i + 1,
+          type: i % 3 === 0 ? "ev" : i % 2 === 0 ? "bike" : "car",
+          status: Math.random() > 0.5 ? "available" : "booked",
+        })),
+      },
+    ],
+  },
+  4: {
+    id: 4,
+    name: "Chennai Airport Parking",
+    location: "Meenambakkam, Chennai",
+    pricePerHour: 70,
+    floors: [
+      {
+        id: "F1",
+        name: "Floor 1",
+        slots: Array.from({ length: 60 }, (_, i) => ({
+          id: `F1-${i + 1}`,
+          number: i + 1,
+          type: i % 3 === 0 ? "ev" : i % 2 === 0 ? "bike" : "car",
+          status: Math.random() > 0.6 ? "available" : "booked",
+        })),
+      },
+      {
+        id: "F2",
+        name: "Floor 2",
+        slots: Array.from({ length: 60 }, (_, i) => ({
+          id: `F2-${i + 1}`,
+          number: i + 1,
+          type: i % 3 === 0 ? "ev" : i % 2 === 0 ? "bike" : "car",
+          status: Math.random() > 0.6 ? "available" : "booked",
+        })),
+      },
+    ],
+  },
+  5: {
+    id: 5,
+    name: "Marina Beach Parking",
+    location: "Marina Beach, Chennai",
+    pricePerHour: 35,
+    floors: [
+      {
+        id: "F1",
+        name: "Floor 1",
+        slots: Array.from({ length: 30 }, (_, i) => ({
+          id: `F1-${i + 1}`,
+          number: i + 1,
+          type: i % 2 === 0 ? "bike" : "car",
+          status: Math.random() > 0.3 ? "available" : "booked",
+        })),
+      },
+    ],
+  },
+  6: {
+    id: 6,
+    name: "Express Avenue Mall",
+    location: "Royapettah, Chennai",
+    pricePerHour: 45,
+    floors: [
+      {
+        id: "F1",
+        name: "Floor 1",
+        slots: Array.from({ length: 45 }, (_, i) => ({
+          id: `F1-${i + 1}`,
+          number: i + 1,
+          type: i % 3 === 0 ? "ev" : i % 2 === 0 ? "bike" : "car",
+          status: Math.random() > 0.4 ? "available" : "booked",
+        })),
+      },
+      {
+        id: "F2",
+        name: "Floor 2",
+        slots: Array.from({ length: 45 }, (_, i) => ({
+          id: `F2-${i + 1}`,
+          number: i + 1,
+          type: i % 3 === 0 ? "ev" : i % 2 === 0 ? "bike" : "car",
+          status: Math.random() > 0.5 ? "available" : "booked",
+        })),
+      },
+    ],
+  },
 };
 
 type SlotStatus = "available" | "booked" | "selected";
@@ -47,8 +168,34 @@ const Booking = () => {
   const [selectedFloor, setSelectedFloor] = useState("F1");
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [duration, setDuration] = useState("2");
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
-  const parkingLot = parkingLotData[1]; // For demo, using lot 1
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Please login to book a slot");
+        navigate("/auth");
+        return;
+      }
+      setUser(session.user);
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) {
+        navigate("/auth");
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const parkingLot = parkingLotData[parseInt(id || "1") as keyof typeof parkingLotData] || parkingLotData[1];
   const currentFloor = parkingLot.floors.find((f) => f.id === selectedFloor);
 
   const handleSlotClick = (slotId: string, status: string) => {
@@ -81,20 +228,67 @@ const Booking = () => {
 
   const totalCost = selectedSlot ? parkingLot.pricePerHour * parseInt(duration) : 0;
 
-  const handleProceedToBooking = () => {
-    if (!selectedSlot) {
-      toast.error("Please select a parking slot");
+  const handleProceedToBooking = async () => {
+    if (!selectedSlot || !user) {
+      toast.error("Please select a slot and login to continue");
       return;
     }
-    navigate("/confirmation", {
-      state: {
-        parkingLot: parkingLot.name,
-        location: parkingLot.location,
-        slotId: selectedSlot,
-        duration: parseInt(duration),
-        totalCost,
-      },
-    });
+
+    setLoading(true);
+
+    const slot = currentFloor?.slots.find((s) => s.id === selectedSlot);
+    if (!slot) {
+      toast.error("Invalid slot selected");
+      setLoading(false);
+      return;
+    }
+
+    const startTime = new Date();
+    const endTime = new Date(startTime.getTime() + parseInt(duration) * 60 * 60 * 1000);
+
+    try {
+      const { data, error } = await supabase.from("bookings").insert({
+        user_id: user.id,
+        parking_lot_id: parkingLot.id,
+        parking_lot_name: parkingLot.name,
+        slot_number: selectedSlot,
+        floor: parseInt(selectedFloor.substring(1)),
+        vehicle_type: slot.type,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        duration_hours: parseInt(duration),
+        price_per_hour: parkingLot.pricePerHour,
+        total_cost: totalCost,
+        status: "active",
+      }).select();
+
+      if (error) {
+        toast.error("Failed to create booking");
+        console.error(error);
+        setLoading(false);
+        return;
+      }
+
+      toast.success("Booking confirmed!");
+      navigate("/confirmation", {
+        state: {
+          bookingId: data[0].id,
+          parkingLot: parkingLot.name,
+          location: parkingLot.location,
+          slotId: selectedSlot,
+          floor: parseInt(selectedFloor.substring(1)),
+          duration: parseInt(duration),
+          totalCost: totalCost,
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+        },
+      });
+    } catch (error) {
+      toast.error("An error occurred while booking");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -256,9 +450,9 @@ const Booking = () => {
                 className="w-full bg-gradient-primary hover:opacity-90"
                 size="lg"
                 onClick={handleProceedToBooking}
-                disabled={!selectedSlot}
+                disabled={!selectedSlot || loading}
               >
-                Proceed to Book
+                {loading ? "Processing..." : "Proceed to Book"}
               </Button>
             </Card>
           </div>
